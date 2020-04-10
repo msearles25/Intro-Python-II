@@ -1,5 +1,6 @@
 from room import Room
 from player import Player
+from item import Item
 
 # Declare all the rooms
 
@@ -34,17 +35,51 @@ room['narrow'].w_to = room['foyer']
 room['narrow'].n_to = room['treasure']
 room['treasure'].s_to = room['narrow']
 
+# Add items to the rooms
+
+room['outside'].add_item(Item('Sword', 'It\'s a sword yo'))
+room['outside'].add_item(Item('Rock', 'What do you want me to say?'))
+room['foyer'].add_item(Item('Map', 'It\'s a map'))
+room['overlook'].add_item(Item('Key', 'It unlocks stuff and things'))
+room['narrow'].add_item(Item('Potion', 'It uhm does, magic'))
+room['treasure'].add_item(Item('Duck', 'It\'s a rubber duck yo'))
+
 #
 # Main
 #
 
 # Make a new player object that is currently in the 'outside' room.
+
+class colors:
+    blink = '\033[5m'
+    red = '\033[91m'
+    yellow = '\033[93m'
+    reset = '\033[0m'
+
+def playerInfo():
+    print(f'\n{colors.yellow}{player.name} is currently located in the {player.current_room.name}.\n')
+    print(f'{player.current_room.description}\n{colors.reset}')
+
+def invalidSelection(sentence = 'You cannot got that way.'):
+    print(f'{colors.red}{colors.blink}\n{sentence}{colors.reset}')
+
+def itemsInPlayerRoom():
+    print('Items in the room:')
+    for item in player.current_room.items:
+        print(f'{colors.yellow}{item.name}: {item.description}{colors.reset}')
+
+def commands():
+    print('\nPlease choose a command...')
+    return input("[n] North [w] West [e] East [s] South [Get Item] [Drop Item] [i] Inventory [q] Quit\n")
+    
+
 playerName = input('Choose a name: ')
 player = Player(playerName, room['outside'])
-print(f'{player.name} is currently located in the {player.current_room.name}\n')
-print(f'{player.current_room.description}\n')
-print('Please choose a direction...')
-commands = input("[n] North [w] West [e] East [s] South [q] Quit\n")
+playerInfo()
+itemsInPlayerRoom()
+command = commands()
+splitCommand = command.split(' ')
+
 
 # Write a loop that:
 #
@@ -57,44 +92,62 @@ commands = input("[n] North [w] West [e] East [s] South [q] Quit\n")
 #
 # If the user enters "q", quit the game.
 
-while not commands == 'q':    
-    if player.current_room == room['outside']:
-        if commands == 'n':
-            player.update_room(room['foyer'])
+
+while not command == 'q':    
+    
+    splitCommand = command.split(' ')
+
+    if len(splitCommand) == 1:
+        if command == 'n':
+            if player.current_room.n_to == None:
+                invalidSelection()
+            else: 
+                player.update_room(player.current_room.n_to)
+        elif command == "s":
+            if player.current_room.s_to == None:
+                invalidSelection()
+            else:
+                player.update_room(player.current_room.s_to)
+        elif command == "w":
+            if player.current_room.w_to == None:
+                invalidSelection()
+            else:
+                player.update_room(player.current_room.w_to)
+        elif command == "e":
+            if player.current_room.e_to == None:
+                invalidSelection()
+            else:
+                player.update_room(player.current_room.e_to)
+        elif command == 'i' or 'inventory':
+            player.get_inventory()
         else:
-            print('You cannot go that way!')
-    elif player.current_room == room['foyer']:
-        if commands == 's':
-            player.update_room(room['outside'])
-        elif commands == 'n':
-            player.update_room(room['overlook'])
-        elif commands == 'e':
-            player.update_room(room['narrow'])
-        else: 
-            print('You cannot go that way!')
-    elif player.current_room == room['overlook']:
-        if commands == 's':
-            player.update_room(room['foyer'])
+            invalidSelection('Try again, pick a valid direction this time.')
+    elif len(splitCommand) == 2:
+
+        if splitCommand[0].lower() == 'get':
+            for item in player.current_room.items:
+                if item.name.lower() == splitCommand[1].lower():
+                    player.current_room.items.remove(item)
+                    player.inventory.append(item)
+                    item.on_take(item.name.lower())
+        
+        elif splitCommand[0].lower() == 'drop':
+            for item in player.inventory:
+                if item.name.lower() == splitCommand[1].lower():
+                    player.inventory.remove(item)
+                    player.current_room.items.append(item)
+                    item.on_drop(item.name.lower())
         else:
-            print('You cannot go that way!')
-    elif player.current_room == room['narrow']:
-        if commands == 'w':
-            player.update_room(room['foyer'])
-        elif commands == 'n':
-            player.update_room(room['treasure'])
-        else: 
-            print('You cannot go that way!')
-    elif player.current_room == room['treasure']:
-        if commands == 's':
-            player.update_room(room['narrow'])
-        else:
-            print('You cannot got that way!')
+            print('That command doesn\'t exist.')
     else:
-        print('That\'s not a valid direction!')
+        print('That command doesn\'t exist.')
 
 
-    print(f'{player.name} is currently located in the {player.current_room.name}\n')
-    print(f'{player.current_room.description}\n')
-    print('Please choose a direction to continue...')
-    commands = input("[n] North [w] West [e] East [s] South [q] Quit\n")
+    playerInfo()
+    itemsInPlayerRoom()
+
+    command = commands()
+
+    # print('\nPlease choose a direction to continue...')
+    # commands = input("[n] North [w] West [e] East [s] South [q] Quit\n")
     
